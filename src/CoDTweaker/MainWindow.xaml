@@ -136,7 +136,7 @@
             <Border Grid.Column="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Settings files" FontWeight="SemiBold" Margin="12,10,12,4"/>
-                    <TextBlock DockPanel.Dock="Top" Text="{Binding PlayersFolder}" Foreground="{StaticResource Muted}" FontSize="11"
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding PlayersFolderDisplay}" Foreground="{StaticResource Muted}" FontSize="11"
                                Margin="12,0,12,8" TextTrimming="CharacterEllipsis" ToolTip="{Binding PlayersFolder}"/>
                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="12,8">
                         <Button Content="Refresh" Command="{Binding RefreshCommand}" Margin="0,0,8,0"/>
@@ -144,7 +144,7 @@
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Margin="12,8" TextWrapping="Wrap" Foreground="{StaticResource Muted}"
                                Visibility="{Binding HasNoFiles, Converter={StaticResource BoolVis}}"
-                               Text="No settings files found. Start Call of Duty once so it creates them, or use Choose folder."/>
+                               Text="No settings files found here. Start Call of Duty once so it creates them, or use Choose folder. Any file in the game's settings format is picked up, whatever it is called."/>
                     <ListBox x:Name="FileList" SelectedItem="{Binding SelectedFile}"
                              BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">

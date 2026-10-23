@@ -8,7 +8,7 @@ Call of Duty keeps its settings in plain text files under `%LOCALAPPDATA%\Activi
 
 ## What it does
 
-- **Finds the files**: the system settings (`s.1.0.cod26.txt`, one per game) and each player's profile files, for every account on the PC.
+- **Finds the files** by what's inside them, not by name: the system settings (`s.1.0.cod26.txt` today; the numbers change with builds and games), each player's profile files for every account on the PC, the `options.4.codNN.txt` files of the 2022-2024 games, and any copies you've made yourself.
 - **Shows every setting** with the game's own description and limits: sliders for numbers, dropdowns for choices, checkboxes for on/off, text for the rest. Values the game detects itself ("DO NOT MODIFY") are shown but not editable.
 - **Search** across names, descriptions and values. **Only changed** shows what you've touched.
 - **Saves exactly**: only the values you changed are rewritten. Comments, order, line endings, everything else stays byte for byte as the game wrote it.
@@ -33,7 +33,7 @@ While a settings file is locked, the game can't save to it. On some builds that 
 
 | | |
 |---|---|
-| Game settings files | `%LOCALAPPDATA%\Activision\Call of Duty\players` |
+| Game settings files | `%LOCALAPPDATA%\Activision\Call of Duty\players` (older games: `Documents\Call of Duty\players`) |
 | Backups made by this app | `%LOCALAPPDATA%\CoDTweaker\backups` |
 | This app's preferences | `%LOCALAPPDATA%\CoDTweaker\settings.json` |
 

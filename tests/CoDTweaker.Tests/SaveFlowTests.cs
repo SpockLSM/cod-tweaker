@@ -36,12 +36,13 @@ public class SaveFlowTests : IDisposable
     MainViewModel NewVm(bool lockAfterSave) => new(_players, new AppSettings { LockAfterSave = lockAfterSave });
 
     [Fact]
-    public void Finds_the_known_files_and_skips_backups()
+    public void Finds_the_known_files_and_lists_copies_last()
     {
         var vm = NewVm(true);
-        Assert.Equal(new[] { "System settings (cod26)", "Player profile (cod26)" }, vm.Files.Select(f => f.Title));
+        Assert.Equal(new[] { "System settings (cod26)", "Player profile (cod26)", "s.1.0.cod26.txt_bak.txt" }, vm.Files.Select(f => f.Title));
         Assert.Equal("Player 1234567890123456", vm.Files[1].Group);
-        Assert.NotNull(vm.SelectedFile);
+        Assert.Equal("Other copies", vm.Files[2].Group);
+        Assert.Same(vm.Files[0], vm.SelectedFile);
         Assert.True(vm.HasDocument);
     }
 

@@ -54,7 +54,8 @@ public sealed class MainViewModel : ObservableObject
     // ----- state shown in the window -----
 
     string _playersFolder;
-    public string PlayersFolder { get => _playersFolder; private set => SetProperty(ref _playersFolder, value); }
+    public string PlayersFolder { get => _playersFolder; private set { if (SetProperty(ref _playersFolder, value)) OnPropertyChanged(nameof(PlayersFolderDisplay)); } }
+    public string PlayersFolderDisplay => FileLocator.DisplayPath(PlayersFolder);
 
     FileItemVm? _selectedFile;
     public FileItemVm? SelectedFile
@@ -129,7 +130,7 @@ public sealed class MainViewModel : ObservableObject
         _selectedFile = again ?? Files.FirstOrDefault();
         OnPropertyChanged(nameof(SelectedFile));
         LoadSelected();
-        if (Files.Count == 0) Status = $"No settings files found in {PlayersFolder}. Start the game once, or choose the folder.";
+        if (Files.Count == 0) Status = $"No settings files found in {PlayersFolderDisplay}. Start the game once, or choose the folder.";
     }
 
     void BrowseFolder()

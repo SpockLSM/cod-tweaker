@@ -1,50 +1,124 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using CoDTweaker.Models;
 
 namespace CoDTweaker.Services;
 
-public sealed record SettingsFileInfo(string Path, string Title, string Subtitle, string Group);
+public sealed record SettingsFileInfo(string Path, string Title, string Subtitle, string Group, int Order);
 
-/// <summary>Finds Call of Duty's settings files.</summary>
+/// <summary>
+/// Finds Call of Duty's settings files. A file counts if its contents are in the game's settings
+/// format, whatever it is called, so new seasons, new games and renamed files still show up.
+/// </summary>
 public static class FileLocator
 {
-    // s.1.0.cod26.txt  -> system settings (graphics, display, audio devices) for that game build
-    static readonly Regex SystemRx = new(@"^s\.\d+\.\d+\.(cod\d+)\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    // g.p.cod26.1.0.l.txt / g.p.cod26.pm.1.0.l.txt -> the player's profile (controls, FOV, audio mix)
-    static readonly Regex ProfileRx = new(@"^g\.p\.(cod\d+)(\.pm)?\.\d+\.\d+\.l\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    // s.1.0.cod26.txt -> system settings (graphics, display, audio devices); the numbers change between builds
+    static readonly Regex SystemRx = new(@"^s\.[\d.]+\.(cod\d+)\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    // g.p.cod26.1.0.l.txt, g.p.cod26.pm.1.0.l.txt -> the player's profile (controls, FOV, audio mix)
+    static readonly Regex ProfileRx = new(@"^g\.p\.(cod\d+)(\.[a-z][a-z0-9]*)?\.[\d.]+\.l\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    // options.4.cod23.txt -> the 2022-2024 games
+    static readonly Regex OptionsRx = new(@"^options\.[\d.]+\.(cod\d+)\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    static readonly Regex GamerProfileRx = new(@"^gamerprofile.*\.(cod\d+)\.txt$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    static readonly Regex GameTokenRx = new(@"\bcod\d{2}\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    static readonly Regex CopyRx = new(@"bak|backup|copy|old|orig|before|\(\d+\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    public static string DefaultPlayersFolder =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Activision", "Call of Duty", "players");
+    /// <summary>Where the game keeps its files: the current location first, then the one older games used.</summary>
+    public static IEnumerable<string> DefaultFolders
+    {
+        get
+        {
+            yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Activision", "Call of Duty", "players");
+            yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Call of Duty", "players");
+        }
+    }
+
+    public static string DefaultPlayersFolder => DefaultFolders.FirstOrDefault(Directory.Exists) ?? DefaultFolders.First();
 
     public static List<SettingsFileInfo> Find(string playersFolder)
     {
         var list = new List<SettingsFileInfo>();
         if (!Directory.Exists(playersFolder)) return list;
+        Scan(playersFolder, "Game settings", list);
+        foreach (var dir in SafeDirs(playersFolder))
+            Scan(dir, "Player " + Path.GetFileName(dir), list);
+        return list.OrderBy(f => f.Order).ThenBy(f => f.Group, StringComparer.OrdinalIgnoreCase).ThenBy(f => f.Title, StringComparer.OrdinalIgnoreCase).ToList();
+    }
 
-        foreach (var f in Directory.EnumerateFiles(playersFolder, "*.txt").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+    static IEnumerable<string> SafeDirs(string dir)
+    {
+        try { return Directory.EnumerateDirectories(dir).OrderBy(d => d, StringComparer.OrdinalIgnoreCase).ToList(); }
+        catch { return Array.Empty<string>(); }
+    }
+
+    static void Scan(string dir, string group, List<SettingsFileInfo> list)
+    {
+        IEnumerable<string> files;
+        try { files = Directory.EnumerateFiles(dir, "*.txt").OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList(); }
+        catch { return; }
+        foreach (var f in files)
         {
-            var m = SystemRx.Match(Path.GetFileName(f));
-            if (m.Success)
-                list.Add(new SettingsFileInfo(f, $"System settings ({m.Groups[1].Value})", "Graphics, display, audio devices, FPS cap", "Shared"));
+            var sections = Sniff(f);
+            if (sections != null) list.Add(Classify(f, group, sections));
         }
-        foreach (var dir in Directory.EnumerateDirectories(playersFolder).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+    }
+
+    /// <summary>The file's section names if it is in the game's settings format, otherwise null.</summary>
+    public static List<string>? Sniff(string path)
+    {
+        try
         {
-            string id = Path.GetFileName(dir);
-            if (!id.All(char.IsDigit)) continue;
-            foreach (var f in Directory.EnumerateFiles(dir, "*.txt").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+            if (new FileInfo(path).Length > 4_000_000) return null;
+            var doc = SettingsDocument.Load(path);
+            return doc.AllSettings.Any() ? doc.Sections.Select(s => s.Name).ToList() : null;
+        }
+        catch { return null; }
+    }
+
+    public static SettingsFileInfo Classify(string path, string group, List<string> sections)
+    {
+        string name = Path.GetFileName(path);
+        // "Sections: Audio, Display, Gameplay..." cut at a section boundary, not mid-word.
+        string subtitle = "";
+        if (sections.Count > 0)
+        {
+            var shown = new List<string>();
+            foreach (var s in sections)
             {
-                var m = ProfileRx.Match(Path.GetFileName(f));
-                if (!m.Success) continue;
-                bool pm = m.Groups[2].Success;
-                list.Add(new SettingsFileInfo(f,
-                    pm ? $"Field of view ({m.Groups[1].Value})" : $"Player profile ({m.Groups[1].Value})",
-                    pm ? "FOV values the game keeps separately" : "Controls, sensitivity, audio mix, HDR, FOV",
-                    $"Player {id}"));
+                if (shown.Count > 0 && string.Join(", ", shown).Length + s.Length > 55) break;
+                shown.Add(s);
             }
+            subtitle = "Sections: " + string.Join(", ", shown) + (shown.Count < sections.Count ? "..." : "");
         }
-        return list;
+
+        // A second ".txt" in the name, or words like "bak", mean someone's own copy of a settings file.
+        string stem = name[..^4];
+        bool isCopy = stem.Contains(".txt", StringComparison.OrdinalIgnoreCase) || CopyRx.IsMatch(stem);
+        if (isCopy) return new SettingsFileInfo(path, name, subtitle, "Other copies", 9);
+
+        Match m;
+        if ((m = SystemRx.Match(name)).Success) return new(path, $"System settings ({m.Groups[1].Value})", subtitle, group, 1);
+        if ((m = OptionsRx.Match(name)).Success) return new(path, $"Options ({m.Groups[1].Value})", subtitle, group, 1);
+        if ((m = ProfileRx.Match(name)).Success)
+        {
+            string tag = m.Groups[2].Success ? ", " + m.Groups[2].Value.TrimStart('.') : "";
+            return new(path, $"Player profile ({m.Groups[1].Value}{tag})", subtitle, group, 2);
+        }
+        if ((m = GamerProfileRx.Match(name)).Success) return new(path, $"Player profile ({m.Groups[1].Value})", subtitle, group, 2);
+
+        // Unknown name but the right format: show it under its own name.
+        return new(path, name, subtitle, group, 3);
     }
 
     public static SettingsFileInfo Describe(string path) =>
-        new(path, Path.GetFileName(path), Path.GetDirectoryName(path) ?? "", "Other files");
+        Classify(path, "Other files", Sniff(path) ?? new List<string>());
+
+    /// <summary>A folder path with the user's profile folders shortened, for display.</summary>
+    public static string DisplayPath(string path)
+    {
+        string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (local.Length > 0 && path.StartsWith(local, StringComparison.OrdinalIgnoreCase)) return "%LOCALAPPDATA%" + path[local.Length..];
+        if (profile.Length > 0 && path.StartsWith(profile, StringComparison.OrdinalIgnoreCase)) return "%USERPROFILE%" + path[profile.Length..];
+        return path;
+    }
 }

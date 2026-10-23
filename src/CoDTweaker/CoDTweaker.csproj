@@ -11,8 +11,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>1.0.0</Version>
     <Product>CoD Tweaker</Product>
-    <Authors>Logan Miller</Authors>
-    <Copyright>Copyright (c) 2026 Logan Miller</Copyright>
+    <Authors>Spock</Authors>
+    <Copyright>Copyright (c) 2026 Spock</Copyright>
     <Description>Edit Call of Duty's settings files outside the game.</Description>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <DebugType>embedded</DebugType>

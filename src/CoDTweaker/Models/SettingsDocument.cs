@@ -23,6 +23,8 @@ public sealed class Setting
     public required string OriginalValue { get; init; }
     /// <summary>The text after " // ", e.g. "0.000000 to 1.000000" or "one of Off, On".</summary>
     public string? Constraint { get; init; }
+    /// <summary>Older games wrote values in double quotes; they go back the same way.</summary>
+    public bool Quoted { get; init; }
     public SettingKind Kind { get; init; }
     public double Min { get; init; }
     public double Max { get; init; }
@@ -62,8 +64,11 @@ public sealed class Setting
         }
     }
 
-    public string RenderLine(string value) =>
-        Constraint is null ? $"{Key} = {value}" : $"{Key} = {value} // {Constraint}";
+    public string RenderLine(string value)
+    {
+        if (Quoted) value = "\"" + value + "\"";
+        return Constraint is null ? $"{Key} = {value}" : $"{Key} = {value} // {Constraint}";
+    }
 }
 
 public sealed class Section
@@ -144,15 +149,19 @@ public sealed class SettingsDocument
         string value = rest;
         if (c >= 0) { value = rest[..c]; constraint = rest[(c + 4)..]; }
 
-        int at = key.LastIndexOf('@');
+        // "Fov@0;24892;9411" (current games) or "Fov:0.0" (2022-2024 games): the readable name stops at '@' or ':'.
+        int at = key.IndexOfAny(new[] { '@', ':' });
         string name = at > 0 ? key[..at] : key;
         int variant = 0;
-        if (at > 0)
+        if (at > 0 && key[at] == '@')
         {
             int semi = key.IndexOf(';', at);
             string v = semi > at ? key[(at + 1)..semi] : key[(at + 1)..];
             int.TryParse(v, out variant);
         }
+
+        bool quoted = value.Length >= 2 && value[0] == '"' && value[^1] == '"';
+        if (quoted) value = value[1..^1];
 
         bool isProtected = description.StartsWith("DO NOT MODIFY", StringComparison.OrdinalIgnoreCase);
         var kind = SettingKind.Text;
@@ -181,7 +190,7 @@ public sealed class SettingsDocument
         return new Setting
         {
             LineIndex = index, Key = key, Name = name, Variant = variant, Description = description,
-            OriginalValue = value, Constraint = constraint, Kind = kind, Min = min, Max = max,
+            OriginalValue = value, Constraint = constraint, Quoted = quoted, Kind = kind, Min = min, Max = max,
             IsFloat = isFloat, Decimals = decimals, Options = options, IsProtected = isProtected,
         };
     }
