@@ -41,6 +41,9 @@ public partial class App : Application
 
         StartInTray = Array.IndexOf(e.Args, "--tray") >= 0;
 
+        // A documentation screenshot should show the app, not whether the game happens to be open right now.
+        if (Array.IndexOf(e.Args, "--screenshot") >= 0) GameProcess.Override = () => false;
+
         // "--theme dark|light" for documentation; otherwise the saved choice, or whatever Windows is set to.
         int t = Array.IndexOf(e.Args, "--theme");
         Theme.Apply(Theme.FromSetting(t >= 0 && t + 1 < e.Args.Length ? e.Args[t + 1] : AppSettings.Load().Theme));
