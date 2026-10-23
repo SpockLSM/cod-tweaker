@@ -1,4 +1,6 @@
-This tool is free, and will always be free. If you appreciate my effort and work, you can tip me here: https://ko-fi.com/spocklsm
+This tool is free, and will always be free. If you appreciate my effort and work, you can tip me here
+
+<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#000000', 'R4B729C84N');kofiwidget2.draw();</script> 
 
 # CoD Tweaker
 
