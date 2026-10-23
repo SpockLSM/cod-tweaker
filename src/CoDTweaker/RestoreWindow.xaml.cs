@@ -14,6 +14,7 @@ public partial class RestoreWindow : Window
     public RestoreWindow(List<BackupInfo> backups)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => Theme.ApplyTitleBar(this);
         _backups = backups;
         List.ItemsSource = backups;
         if (backups.Count > 0) List.SelectedIndex = 0;

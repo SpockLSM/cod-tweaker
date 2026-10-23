@@ -40,6 +40,8 @@ public partial class MainWindow : Window
 
         DataContext = _vm;
         FileList.ItemsSource = FilesView;
+        UpdateThemeButton();
+        SourceInitialized += (_, _) => Theme.ApplyTitleBar(this);
 
         _timer.Tick += (_, _) => { _vm.RefreshGameState(); _vm.RefreshLockState(); };
         _timer.Start();
@@ -61,6 +63,16 @@ public partial class MainWindow : Window
         if (r == MessageBoxResult.Cancel) { e.Cancel = true; return; }
         if (r == MessageBoxResult.Yes) { _vm.SaveCommand.Execute(null); if (_vm.ChangeCount > 0) e.Cancel = true; }
     }
+
+    void ThemeButton_Click(object sender, RoutedEventArgs e)
+    {
+        Theme.Apply(!Theme.IsDark);
+        _vm.Prefs.Theme = Theme.IsDark ? "dark" : "light";
+        _vm.Prefs.Save();
+        UpdateThemeButton();
+    }
+
+    void UpdateThemeButton() => ThemeButton.Content = Theme.IsDark ? "☀ Light mode" : "\U0001F319 Dark mode";
 
     // Pressing Enter in a value box applies it right away instead of waiting for focus to leave.
     void CommitOnEnter(object sender, KeyEventArgs e)

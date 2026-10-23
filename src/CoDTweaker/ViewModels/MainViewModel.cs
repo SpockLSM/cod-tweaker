@@ -14,6 +14,7 @@ public sealed class MainViewModel : ObservableObject
 
     public ObservableCollection<FileItemVm> Files { get; } = new();
     public ObservableCollection<SectionVm> Sections { get; } = new();
+    public AppSettings Prefs => _prefs;
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand ReloadCommand { get; }

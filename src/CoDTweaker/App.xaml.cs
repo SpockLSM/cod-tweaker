@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using CoDTweaker.Services;
 
 namespace CoDTweaker;
 
@@ -15,6 +16,10 @@ public partial class App : Application
         base.OnStartup(e);
         int p = Array.IndexOf(e.Args, "--players");
         if (p >= 0 && p + 1 < e.Args.Length) PlayersFolderOverride = e.Args[p + 1];
+
+        // "--theme dark|light" for documentation; otherwise the saved choice, or whatever Windows is set to.
+        int t = Array.IndexOf(e.Args, "--theme");
+        Theme.Apply(Theme.FromSetting(t >= 0 && t + 1 < e.Args.Length ? e.Args[t + 1] : AppSettings.Load().Theme));
 
         var window = new MainWindow();
         window.Show();

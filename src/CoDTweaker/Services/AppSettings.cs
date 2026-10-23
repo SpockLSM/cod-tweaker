@@ -8,6 +8,8 @@ public sealed class AppSettings
 {
     public bool LockAfterSave { get; set; } = true;
     public string? PlayersFolder { get; set; }
+    /// <summary>"light", "dark", or null to follow Windows.</summary>
+    public string? Theme { get; set; }
     public double WindowWidth { get; set; }
     public double WindowHeight { get; set; }
 

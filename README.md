@@ -15,6 +15,7 @@ Call of Duty keeps its settings in plain text files under `%LOCALAPPDATA%\Activi
 - **Backs up before every save** (`%LOCALAPPDATA%\CoDTweaker\backups`), with **Restore backup** to go back.
 - **Locks the file after saving** (read-only) so the game can't overwrite your edits. Lock and unlock any time without saving.
 - Warns when the game is running, since it only reads these files at startup.
+- **Light and dark**: follows your Windows setting, or pick one with the button in the corner.
 
 ## Use it
 
