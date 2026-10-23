@@ -1,0 +1,33 @@
+<Window x:Class="CoDTweaker.RestoreWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Restore a backup" Width="560" Height="420" MinWidth="460" MinHeight="300"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource WindowBg}"
+        FontFamily="Segoe UI" FontSize="13" Foreground="{StaticResource Text}" ShowInTaskbar="False">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
+                   Text="A backup is taken every time this app saves. Pick one to put back. The file as it is now is backed up first, so nothing is lost."/>
+        <Border Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8">
+            <ListBox x:Name="List" BorderThickness="0" Background="Transparent" MouseDoubleClick="List_MouseDoubleClick" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="6,4">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Size, Converter={StaticResource Size}}" Foreground="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding Time, StringFormat='{}{0:dddd, d MMMM yyyy  HH:mm:ss}'}"/>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Open backup folder" Click="OpenFolder_Click" Margin="0,0,8,0"/>
+            <Button Content="Cancel" IsCancel="True" Margin="0,0,8,0"/>
+            <Button x:Name="RestoreButton" Content="Restore" Style="{StaticResource PrimaryButton}" Click="Restore_Click" IsDefault="True" MinWidth="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

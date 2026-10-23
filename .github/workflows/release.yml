@@ -1,0 +1,33 @@
+# Tag a commit (git tag v1.2.3 && git push --tags) and this builds CoDTweaker.exe and attaches it to a GitHub release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Version from tag
+        shell: pwsh
+        run: '"VERSION=$($env:GITHUB_REF_NAME.TrimStart(''v''))" | Out-File -Append $env:GITHUB_ENV'
+      - name: Test
+        run: dotnet test tests/CoDTweaker.Tests/CoDTweaker.Tests.csproj -c Release
+      - name: Publish single-file exe
+        run: >
+          dotnet publish src/CoDTweaker/CoDTweaker.csproj -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          -p:Version=${{ env.VERSION }} -o publish
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME publish/CoDTweaker.exe --title "CoD Tweaker $env:GITHUB_REF_NAME" --generate-notes

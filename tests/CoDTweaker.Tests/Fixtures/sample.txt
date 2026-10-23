@@ -1,0 +1,47 @@
+1
+
+
+//
+// Audio
+
+// Adjusts overall volume of the game
+Volume@0;14317;21371 = 1.000000 // 0.000000 to 1.000000
+
+// Voice device requested by the user
+VoiceOutputDevice@0;2059;35888 =
+
+// Using push to talk to activate microphone.
+VoicePushToTalk@0;57752;20945 = true
+
+
+//
+// Display
+
+// Fullscreen mode
+DisplayMode@0;22564;43096 = Fullscreen // one of Windowed, Fullscreen, Fullscreen borderless window, Fullscreen borderless extended window
+
+// Custom maximum frames per second when in a match
+MaxFpsInGame@0;13305;58861 = 100 // 30 to 300
+
+// Enables DirectX Raytracing
+DxrMode@0;37334;7764 = On // one of Off, On
+
+// Enables DirectX Raytracing
+DxrMode@1;8707;7764 = Ultra // one of Off, Low, Medium, High, Ultra
+
+// Volumetric quality
+VolumetricQuality@1;4276;58629 = QQUALITY_VERYHIGH // one of QUALITY_LOW, QUALITY_MEDIUM, QUALITY_HIGH, QUALITY_VERYHIGH
+
+// Adjusts the time at max stick deflection before sprinting. In milliseconds.
+Sprint Assist Delay Gamepad@1;23176;7764 = 0 // 0 to 12750
+
+
+//
+// System
+
+// DO NOT MODIFY. Physical memory detected in the system
+DetectedMemoryAmountMB@0;38495;7764 = 65200 // -2147483648 to 2147483647
+
+// Last used GPU
+LastUsedGPU@0;56178;35888 = NVIDIA GeForce RTX 5080 Laptop GPU
+
