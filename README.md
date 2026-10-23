@@ -1,6 +1,6 @@
 This tool is free, and will always be free. If you appreciate my effort and work, you can tip me here
 
-<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#000000', 'R4B729C84N');kofiwidget2.draw();</script> 
+<a href='https://ko-fi.com/R4B729C84N' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 # CoD Tweaker
 
