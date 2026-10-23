@@ -1,3 +1,5 @@
+This tool is free, and will always be free. If you appreciate my effort and work, you can tip me here: https://ko-fi.com/spocklsm
+
 # CoD Tweaker
 
 Edit Call of Duty's settings files outside the game, including the options the in-game menu doesn't show, and lock them so the game can't overwrite your changes.
