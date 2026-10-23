@@ -4,14 +4,15 @@ namespace CoDTweaker.Services;
 
 public sealed record BackupInfo(string Path, DateTime Time, long Size);
 
-/// <summary>Keeps a copy of every settings file before it is changed.</summary>
+/// <summary>Keeps a copy of every settings file before it is changed. The newest 30 per file are kept.</summary>
 public static class BackupService
 {
+    public const int Keep = 30;
+
     /// <summary>Tests point this somewhere disposable.</summary>
     public static string? RootOverride { get; set; }
 
-    public static string Root => RootOverride ??
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CoDTweaker", "backups");
+    public static string Root => RootOverride ?? Path.Combine(AppPaths.Root, "backups");
 
     static string FolderFor(string file)
     {
@@ -31,7 +32,16 @@ public static class BackupService
         while (File.Exists(target)) target = Path.Combine(dir, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + $"_{n++}.txt");
         File.Copy(file, target);
         File.SetAttributes(target, FileAttributes.Normal);
+        Prune(file);
         return target;
+    }
+
+    /// <summary>Deletes the oldest backups of a file beyond the newest <see cref="Keep"/>.</summary>
+    public static int Prune(string file, int keep = Keep)
+    {
+        var old = List(file).Skip(keep).ToList();
+        foreach (var b in old) { try { File.Delete(b.Path); } catch { /* a backup that won't delete is just kept */ } }
+        return old.Count;
     }
 
     public static List<BackupInfo> List(string file)

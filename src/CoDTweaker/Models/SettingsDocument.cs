@@ -90,13 +90,15 @@ public sealed class SettingsDocument
     public string Path { get; }
     public string NewLine { get; }
     public bool HasBom { get; }
+    /// <summary>The bytes this document was parsed from, to tell later whether the file changed on disk.</summary>
+    public byte[] OriginalBytes { get; }
     public IReadOnlyList<string> Lines { get; }
     public IReadOnlyList<Section> Sections { get; }
     public IEnumerable<Setting> AllSettings => Sections.SelectMany(s => s.Settings);
 
-    SettingsDocument(string path, string newLine, bool hasBom, List<string> lines, List<Section> sections)
+    SettingsDocument(string path, string newLine, bool hasBom, byte[] bytes, List<string> lines, List<Section> sections)
     {
-        Path = path; NewLine = newLine; HasBom = hasBom; Lines = lines; Sections = sections;
+        Path = path; NewLine = newLine; HasBom = hasBom; OriginalBytes = bytes; Lines = lines; Sections = sections;
     }
 
     public static SettingsDocument Load(string path) => Parse(path, File.ReadAllBytes(path));
@@ -137,7 +139,7 @@ public sealed class SettingsDocument
         }
         if (current.Settings.Count > 0) sections.Add(current);
 
-        return new SettingsDocument(path, newLine, bom, lines, sections);
+        return new SettingsDocument(path, newLine, bom, bytes, lines, sections);
     }
 
     static Setting? ParseSetting(string line, int index, int eq, string description)
@@ -193,6 +195,25 @@ public sealed class SettingsDocument
             OriginalValue = value, Constraint = constraint, Quoted = quoted, Kind = kind, Min = min, Max = max,
             IsFloat = isFloat, Decimals = decimals, Options = options, IsProtected = isProtected,
         };
+    }
+
+    /// <summary>
+    /// The setting a value from another file or a preset belongs to: the exact key when it still exists,
+    /// otherwise the first setting with the same name and variant (the hash part of a key changes between builds).
+    /// </summary>
+    public Setting? Match(string name, int variant, string? key = null)
+    {
+        if (key != null)
+            foreach (var s in AllSettings) if (s.Key == key) return s;
+        foreach (var s in AllSettings) if (s.Variant == variant && s.Name == name) return s;
+        return null;
+    }
+
+    /// <summary>True when the file on disk no longer holds the bytes this document was read from.</summary>
+    public bool IsStaleOnDisk()
+    {
+        try { return !File.ReadAllBytes(Path).AsSpan().SequenceEqual(OriginalBytes); }
+        catch { return false; } // being written right now, or gone: nothing to compare against yet
     }
 
     /// <summary>The file text with the given settings' values replaced; everything else untouched.</summary>

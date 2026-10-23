@@ -16,15 +16,24 @@
                         <ColumnDefinition Width="6"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="340"/>
-                        <ColumnDefinition Width="34"/>
+                        <ColumnDefinition Width="66"/>
                     </Grid.ColumnDefinitions>
 
                     <Border x:Name="accent" Grid.Column="0" Width="3" CornerRadius="2" HorizontalAlignment="Left" Background="Transparent"/>
 
                     <StackPanel Grid.Column="1" Margin="8,0,12,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <Border Background="{DynamicResource InfoBg}" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    ToolTip="The in-game menu has no control for this setting; only the file can change it."
+                                    Visibility="{Binding IsHidden, Converter={StaticResource BoolVis}}">
+                                <TextBlock Text="Not in the in-game menu" FontSize="10" Foreground="{DynamicResource InfoText}"/>
+                            </Border>
+                        </StackPanel>
                         <TextBlock Text="{Binding Description}" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap"
                                    Visibility="{Binding Description.Length, Converter={StaticResource BoolVis}}"/>
+                        <TextBlock Text="{Binding NoteText}" Foreground="{DynamicResource InfoText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Visibility="{Binding HasNote, Converter={StaticResource BoolVis}}"/>
                     </StackPanel>
 
                     <Grid Grid.Column="2" VerticalAlignment="Center" IsEnabled="{Binding IsEditable}">
@@ -55,14 +64,26 @@
                                  Visibility="{Binding Kind, Converter={StaticResource KindVis}, ConverterParameter=Text}"/>
                     </Grid>
 
-                    <Button Grid.Column="3" Style="{StaticResource IconButton}" Content="&#x21BA;" ToolTip="Undo this change"
-                            Command="{Binding ResetCommand}" Foreground="{DynamicResource Modified}"
-                            Visibility="{Binding IsModified, Converter={StaticResource BoolVis}}"/>
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource IconButton}" Content="&#x21BA;" ToolTip="Undo this change"
+                                Command="{Binding ResetCommand}" Foreground="{DynamicResource Modified}"
+                                Visibility="{Binding IsModified, Converter={StaticResource BoolVis}}"/>
+                        <Button x:Name="pin" Style="{StaticResource IconButton}" Content="&#x1F4CC;" FontSize="13" Opacity="0.3"
+                                ToolTip="{Binding PinTip}" Command="{Binding TogglePinCommand}"
+                                Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}"/>
+                    </StackPanel>
                 </Grid>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsModified}" Value="True">
                     <Setter TargetName="accent" Property="Background" Value="{DynamicResource Modified}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                    <Setter TargetName="pin" Property="Opacity" Value="1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding PinMismatch}" Value="True">
+                    <Setter TargetName="pin" Property="Foreground" Value="{DynamicResource Modified}"/>
+                    <Setter TargetName="pin" Property="Content" Value="&#x1F4CC;!"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -92,6 +113,16 @@
                 </StackPanel>
             </DockPanel>
         </DataTemplate>
+
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource Panel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
+        </Style>
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root" Margin="16">
@@ -117,14 +148,42 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- Game running banner -->
-        <Border Grid.Row="1" Background="{DynamicResource WarnBg}" BorderBrush="{DynamicResource WarnBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
-                Visibility="{Binding IsGameRunning, Converter={StaticResource BoolVis}}">
-            <TextBlock TextWrapping="Wrap">
-                <Run FontWeight="SemiBold" Text="Call of Duty is running."/>
-                <Run Text=" The game reads these files only when it starts and overwrites them when it exits, unless the file is locked. Close the game, then save."/>
-            </TextBlock>
-        </Border>
+        <!-- Banners -->
+        <StackPanel Grid.Row="1">
+            <Border Background="{DynamicResource InfoBg}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                    Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="Download" Command="{Binding OpenUpdateCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Not now" Command="{Binding DismissUpdateCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding UpdateText}" Foreground="{DynamicResource InfoText}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </DockPanel>
+            </Border>
+
+            <Border Background="{DynamicResource WarnBg}" BorderBrush="{DynamicResource WarnBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                    Visibility="{Binding IsGameRunning, Converter={StaticResource BoolVis}}">
+                <TextBlock TextWrapping="Wrap">
+                    <Run FontWeight="SemiBold" Text="Call of Duty is running."/>
+                    <Run Text=" The game reads these files only when it starts and overwrites them when it exits, unless the file is locked. Close the game, then save."/>
+                </TextBlock>
+            </Border>
+
+            <Border Background="{DynamicResource WarnBg}" BorderBrush="{DynamicResource WarnBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                    Visibility="{Binding IsStale, Converter={StaticResource BoolVis}}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Show what changed" Command="{Binding ShowDiskChangesCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Reload, keep my edits" Command="{Binding ReloadKeepEditsCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Reload" Command="{Binding ReloadCommand}"/>
+                    </StackPanel>
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Run FontWeight="SemiBold" Text="This file changed on disk since you opened it."/>
+                        <Run Text=" The game probably saved it. Saving now would overwrite those changes, so the app will ask first."/>
+                    </TextBlock>
+                </DockPanel>
+            </Border>
+        </StackPanel>
 
         <!-- Body -->
         <Grid Grid.Row="2">
@@ -174,16 +233,22 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
                         <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,6,6" FontSize="14"/>
                         <TextBlock Text="&#x1F50D;" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.6"/>
-                        <TextBlock Text="Search settings by name, description or value" Margin="32,0,0,0" VerticalAlignment="Center"
+                        <TextBlock Text="Search settings by name, description, note or value" Margin="32,0,0,0" VerticalAlignment="Center"
                                    Foreground="{DynamicResource Muted}" IsHitTestVisible="False"
                                    Visibility="{Binding Search.Length, Converter={StaticResource BoolVisInverse}}"/>
                     </Grid>
                     <CheckBox Grid.Column="1" Content="Only changed" IsChecked="{Binding OnlyModified}" Margin="14,0,0,0" VerticalAlignment="Center"/>
-                    <Border Grid.Column="2" Margin="14,0,0,0" CornerRadius="12" Padding="10,4" VerticalAlignment="Center"
+                    <CheckBox Grid.Column="2" Content="Only pinned" IsChecked="{Binding OnlyPinned}" Margin="14,0,0,0" VerticalAlignment="Center"
+                              ToolTip="Settings the Guard puts back after the game exits"/>
+                    <CheckBox Grid.Column="3" Content="Not in the menu" IsChecked="{Binding OnlyHidden}" Margin="14,0,0,0" VerticalAlignment="Center"
+                              ToolTip="Settings the in-game menu has no control for"/>
+                    <Border Grid.Column="4" Margin="14,0,0,0" CornerRadius="12" Padding="10,4" VerticalAlignment="Center"
                             Background="{DynamicResource OkBg}" BorderBrush="{DynamicResource OkBorder}" BorderThickness="1" ToolTip="{Binding LockTip}"
                             Visibility="{Binding HasDocument, Converter={StaticResource BoolVis}}">
                         <StackPanel Orientation="Horizontal">
@@ -205,17 +270,42 @@
                 Padding="16,10" Margin="0,12,0,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="MoreButton" Content="More &#x25BE;" Click="MoreButton_Click" Margin="0,0,8,0">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Compare with a backup or another file..." Command="{Binding CompareCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Export preset (all settings)..." Command="{Binding ExportPresetCommand}"/>
+                                <MenuItem Header="Export preset (pinned only)..." Command="{Binding ExportPinnedPresetCommand}"/>
+                                <MenuItem Header="Apply a preset..." Command="{Binding ApplyPresetCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Put pinned values back now" Command="{Binding ApplyPinsNowCommand}"/>
+                                <MenuItem Header="Restore a backup..." Command="{Binding RestoreCommand}"/>
+                                <MenuItem Header="Open backups folder" Command="{Binding OpenBackupsFolderCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Lock all game files" Command="{Binding LockAllCommand}"/>
+                                <MenuItem Header="Unlock all game files" Command="{Binding UnlockAllCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Check for updates" Command="{Binding CheckUpdatesCommand}"/>
+                                <MenuItem Header="Exit" Click="Exit_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                     <Button Content="Lock / unlock file" Command="{Binding ToggleLockCommand}" Margin="0,0,8,0"
                             ToolTip="Toggle the file's read-only flag without saving"/>
-                    <Button Content="Restore backup..." Command="{Binding RestoreCommand}" Margin="0,0,8,0"/>
                     <Button Content="Discard changes" Command="{Binding DiscardAllCommand}" Margin="0,0,8,0"/>
                     <Button Content="Reload" Command="{Binding ReloadCommand}" Margin="0,0,8,0"/>
                     <Button Content="Save" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" MinWidth="110"/>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <CheckBox IsChecked="{Binding LockAfterSave}" FontWeight="SemiBold" Content="Lock the file after saving (read-only)"/>
-                    <TextBlock Foreground="{DynamicResource Muted}" FontSize="11" Margin="20,2,0,0" TextWrapping="Wrap" MaxWidth="520"
-                               Text="Stops the game overwriting your edits when it exits. While a file is locked, the in-game settings menu can't save and may misbehave: unlock before using it."/>
+                    <TextBlock Foreground="{DynamicResource Muted}" FontSize="11" Margin="20,2,0,6" TextWrapping="Wrap" MaxWidth="560"
+                               Text="Stops the game overwriting your edits when it exits. While a file is locked the in-game settings menu can't save and may misbehave."/>
+                    <CheckBox IsChecked="{Binding GuardPinned}" FontWeight="SemiBold" Content="Guard pinned settings"/>
+                    <TextBlock Foreground="{DynamicResource Muted}" FontSize="11" Margin="20,2,0,0" TextWrapping="Wrap" MaxWidth="560"
+                               Text="The friendlier alternative to locking: files with pins are unlocked while the game runs, so its menu works, and the pinned values are written back when it exits. The app keeps running in the tray to do that."/>
+                    <TextBlock Foreground="{DynamicResource InfoText}" FontSize="11" Margin="20,2,0,0" TextWrapping="Wrap" MaxWidth="560"
+                               Text="{Binding GuardText}" Visibility="{Binding GuardText.Length, Converter={StaticResource BoolVis}}"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -223,6 +313,7 @@
         <!-- Status bar -->
         <DockPanel Grid.Row="4" Margin="2,8,2,0">
             <TextBlock DockPanel.Dock="Right" Text="{Binding ChangeText}" Foreground="{DynamicResource Muted}" Margin="16,0,0,0"/>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding PinnedText}" Foreground="{DynamicResource Muted}" Margin="16,0,0,0"/>
             <TextBlock Text="{Binding Status}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Status}"/>
         </DockPanel>
     </Grid>

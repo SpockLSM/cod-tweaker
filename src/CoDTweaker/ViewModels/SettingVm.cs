@@ -1,20 +1,25 @@
 using System.Globalization;
 using CoDTweaker.Models;
+using CoDTweaker.Services;
 
 namespace CoDTweaker.ViewModels;
 
 public sealed class SettingVm : ObservableObject
 {
     string _value;
+    readonly SettingNote? _note;
 
     public Setting Model { get; }
     public RelayCommand ResetCommand { get; }
+    public RelayCommand TogglePinCommand { get; }
 
     public SettingVm(Setting model)
     {
         Model = model;
         _value = model.OriginalValue;
+        _note = Notes.For(model.Name);
         ResetCommand = new RelayCommand(Reset);
+        TogglePinCommand = new RelayCommand(() => IsPinned = !IsPinned, () => IsEditable);
     }
 
     public string DisplayName => Model.Variant == 0 ? Model.Name : $"{Model.Name}  [variant {Model.Variant}]";
@@ -36,6 +41,39 @@ public sealed class SettingVm : ObservableObject
     public double Max => Model.Max;
     public double Step => Model.IsFloat ? Math.Pow(10, -Math.Min(Model.Decimals, 3)) : 1;
 
+    // ----- notes -----
+
+    public bool HasNote => _note != null && _note.Note.Length > 0;
+    public string NoteText => _note == null ? "" : _note.Suggested is { Length: > 0 } s ? $"{_note.Note}  Suggested: {s}." : _note.Note;
+    /// <summary>The in-game menu has no control for this setting; only the file can change it.</summary>
+    public bool IsHidden => _note?.Hidden ?? false;
+
+    // ----- pins -----
+
+    bool _isPinned;
+    /// <summary>Pinned settings are written back by the Guard after the game exits.</summary>
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set { if (SetProperty(ref _isPinned, value)) { OnPropertyChanged(nameof(PinTip)); OnPropertyChanged(nameof(PinMismatch)); } }
+    }
+
+    string? _pinnedValue;
+    /// <summary>The value the Guard will restore; null when not pinned.</summary>
+    public string? PinnedValue
+    {
+        get => _pinnedValue;
+        set { if (SetProperty(ref _pinnedValue, value)) { OnPropertyChanged(nameof(PinMismatch)); OnPropertyChanged(nameof(PinTip)); } }
+    }
+
+    /// <summary>The file holds a different value than the pin (the game changed it); the Guard will put the pin back.</summary>
+    public bool PinMismatch => IsPinned && PinnedValue != null && PinnedValue != _value;
+
+    public string PinTip => !IsPinned
+        ? "Pin this value. The Guard puts pinned values back after the game exits."
+        : PinMismatch ? $"Pinned at {PinnedValue}; the file currently says {_value}. The Guard restores the pin when the game exits. Click to unpin."
+        : "Pinned: the Guard puts this value back after the game exits. Click to unpin.";
+
     /// <summary>The choices shown in the dropdown. Includes the current value even if the game's list doesn't, so nothing is hidden.</summary>
     public IReadOnlyList<string> DisplayOptions =>
         Model.Options.Contains(_value) ? Model.Options : Model.Options.Concat(new[] { _value }).ToList();
@@ -54,6 +92,8 @@ public sealed class SettingVm : ObservableObject
             OnPropertyChanged(nameof(NumberValue));
             OnPropertyChanged(nameof(IsModified));
             OnPropertyChanged(nameof(DisplayOptions));
+            OnPropertyChanged(nameof(PinMismatch));
+            OnPropertyChanged(nameof(PinTip));
         }
     }
 
@@ -77,7 +117,8 @@ public sealed class SettingVm : ObservableObject
         search.Length == 0 ||
         Model.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
         Model.Description.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-        _value.Contains(search, StringComparison.OrdinalIgnoreCase);
+        _value.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+        (HasNote && NoteText.Contains(search, StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed class SectionVm : ObservableObject
@@ -95,9 +136,9 @@ public sealed class SectionVm : ObservableObject
         Visible = All;
     }
 
-    public void Filter(string search, bool onlyModified)
+    public void Filter(string search, bool onlyModified, bool onlyPinned = false, bool onlyHidden = false)
     {
-        Visible = All.Where(s => s.Matches(search) && (!onlyModified || s.IsModified)).ToList();
+        Visible = All.Where(s => s.Matches(search) && (!onlyModified || s.IsModified) && (!onlyPinned || s.IsPinned) && (!onlyHidden || s.IsHidden)).ToList();
         OnPropertyChanged(nameof(Visible));
         OnPropertyChanged(nameof(IsVisible));
         OnPropertyChanged(nameof(CountText));

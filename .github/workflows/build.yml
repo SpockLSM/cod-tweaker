@@ -17,3 +17,23 @@ jobs:
         run: dotnet build src/CoDTweaker/CoDTweaker.csproj -c Release
       - name: Test
         run: dotnet test tests/CoDTweaker.Tests/CoDTweaker.Tests.csproj -c Release
+      - name: Publish single-file exe
+        run: >
+          dotnet publish src/CoDTweaker/CoDTweaker.csproj -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
+      - name: Smoke test (the published exe must start, draw its window and exit cleanly)
+        shell: pwsh
+        run: |
+          $players = Join-Path $env:RUNNER_TEMP 'players'
+          New-Item -ItemType Directory -Force $players | Out-Null
+          Copy-Item tests/CoDTweaker.Tests/Fixtures/sample.txt (Join-Path $players 's.1.0.cod26.txt')
+          $png = Join-Path $env:RUNNER_TEMP 'smoke.png'
+          $p = Start-Process -FilePath (Resolve-Path publish/CoDTweaker.exe) -ArgumentList @('--players', "`"$players`"", '--screenshot', "`"$png`"", '--theme', 'dark') -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'CoDTweaker.exe did not exit after taking the screenshot' }
+          if ($p.ExitCode -ne 0) { throw "CoDTweaker.exe exited with code $($p.ExitCode)" }
+          if (-not (Test-Path $png)) { throw 'No screenshot was written: the window did not render' }
+          Write-Host "Smoke test passed: $((Get-Item $png).Length) byte screenshot"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshot
+          path: ${{ runner.temp }}/smoke.png

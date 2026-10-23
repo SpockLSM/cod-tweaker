@@ -24,11 +24,13 @@ public class SaveFlowTests : IDisposable
         File.WriteAllBytes(Path.Combine(_players, "1234567890123456", "g.p.cod26.1.0.l.txt"), _original);
         File.WriteAllBytes(Path.Combine(_players, "s.1.0.cod26.txt_bak.txt"), _original); // a user's own backup: must not be listed
         BackupService.RootOverride = Path.Combine(_root, "backups");
+        AppPaths.RootOverride = Path.Combine(_root, "app");
     }
 
     public void Dispose()
     {
         BackupService.RootOverride = null;
+        AppPaths.RootOverride = null;
         foreach (var f in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal);
         Directory.Delete(_root, recursive: true);
     }

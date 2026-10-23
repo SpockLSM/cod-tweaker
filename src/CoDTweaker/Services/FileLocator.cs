@@ -4,7 +4,13 @@ using CoDTweaker.Models;
 
 namespace CoDTweaker.Services;
 
-public sealed record SettingsFileInfo(string Path, string Title, string Subtitle, string Group, int Order);
+/// <param name="Kind">"system", "profile", "options" or "other": which of the game's files this is.</param>
+/// <param name="Game">The game token from the name, e.g. "cod26"; empty when the name doesn't carry one.</param>
+public sealed record SettingsFileInfo(string Path, string Title, string Subtitle, string Group, int Order, string Kind = "other", string Game = "")
+{
+    /// <summary>The game's own files, as opposed to copies the user made or opened by hand.</summary>
+    public bool IsGameFile => Group != "Other copies" && Group != "Other files";
+}
 
 /// <summary>
 /// Finds Call of Duty's settings files. A file counts if its contents are in the game's settings
@@ -90,23 +96,25 @@ public static class FileLocator
             subtitle = "Sections: " + string.Join(", ", shown) + (shown.Count < sections.Count ? "..." : "");
         }
 
+        string game = GameTokenRx.Match(name) is { Success: true } g ? g.Value.ToLowerInvariant() : "";
+
         // A second ".txt" in the name, or words like "bak", mean someone's own copy of a settings file.
         string stem = name[..^4];
         bool isCopy = stem.Contains(".txt", StringComparison.OrdinalIgnoreCase) || CopyRx.IsMatch(stem);
-        if (isCopy) return new SettingsFileInfo(path, name, subtitle, "Other copies", 9);
+        if (isCopy) return new SettingsFileInfo(path, name, subtitle, "Other copies", 9, "other", game);
 
         Match m;
-        if ((m = SystemRx.Match(name)).Success) return new(path, $"System settings ({m.Groups[1].Value})", subtitle, group, 1);
-        if ((m = OptionsRx.Match(name)).Success) return new(path, $"Options ({m.Groups[1].Value})", subtitle, group, 1);
+        if ((m = SystemRx.Match(name)).Success) return new(path, $"System settings ({m.Groups[1].Value})", subtitle, group, 1, "system", game);
+        if ((m = OptionsRx.Match(name)).Success) return new(path, $"Options ({m.Groups[1].Value})", subtitle, group, 1, "options", game);
         if ((m = ProfileRx.Match(name)).Success)
         {
             string tag = m.Groups[2].Success ? ", " + m.Groups[2].Value.TrimStart('.') : "";
-            return new(path, $"Player profile ({m.Groups[1].Value}{tag})", subtitle, group, 2);
+            return new(path, $"Player profile ({m.Groups[1].Value}{tag})", subtitle, group, 2, "profile", game);
         }
-        if ((m = GamerProfileRx.Match(name)).Success) return new(path, $"Player profile ({m.Groups[1].Value})", subtitle, group, 2);
+        if ((m = GamerProfileRx.Match(name)).Success) return new(path, $"Player profile ({m.Groups[1].Value})", subtitle, group, 2, "profile", game);
 
         // Unknown name but the right format: show it under its own name.
-        return new(path, name, subtitle, group, 3);
+        return new(path, name, subtitle, group, 3, "other", game);
     }
 
     public static SettingsFileInfo Describe(string path) =>

@@ -18,6 +18,9 @@ public partial class RestoreWindow : Window
         _backups = backups;
         List.ItemsSource = backups;
         if (backups.Count > 0) List.SelectedIndex = 0;
+        long total = backups.Sum(b => b.Size);
+        SummaryText.Text = $"{backups.Count} backup{(backups.Count == 1 ? "" : "s")} of this file, {(total >= 1024 * 1024 ? $"{total / 1048576.0:N1} MB" : $"{total / 1024.0:N0} KB")} in all. " +
+                           $"The newest {BackupService.Keep} are kept; older ones are removed when a new backup is made.";
     }
 
     public BackupInfo? PickOne() => ShowDialog() == true ? _picked : null;

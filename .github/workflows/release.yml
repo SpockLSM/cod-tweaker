@@ -21,13 +21,32 @@ jobs:
         run: '"VERSION=$($env:GITHUB_REF_NAME.TrimStart(''v''))" | Out-File -Append $env:GITHUB_ENV'
       - name: Test
         run: dotnet test tests/CoDTweaker.Tests/CoDTweaker.Tests.csproj -c Release
-      - name: Publish single-file exe
+      - name: Publish single-file exe (self-contained, needs nothing installed)
         run: >
           dotnet publish src/CoDTweaker/CoDTweaker.csproj -c Release -r win-x64 --self-contained
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
           -p:Version=${{ env.VERSION }} -o publish
+      - name: Publish small exe (needs the .NET 10 Desktop Runtime)
+        run: >
+          dotnet publish src/CoDTweaker/CoDTweaker.csproj -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true -p:Version=${{ env.VERSION }} -o publish-small
+      - name: Smoke test (the published exe must start, draw its window and exit cleanly)
+        shell: pwsh
+        run: |
+          $players = Join-Path $env:RUNNER_TEMP 'players'
+          New-Item -ItemType Directory -Force $players | Out-Null
+          Copy-Item tests/CoDTweaker.Tests/Fixtures/sample.txt (Join-Path $players 's.1.0.cod26.txt')
+          $png = Join-Path $env:RUNNER_TEMP 'smoke.png'
+          $p = Start-Process -FilePath (Resolve-Path publish/CoDTweaker.exe) -ArgumentList @('--players', "`"$players`"", '--screenshot', "`"$png`"", '--theme', 'dark') -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'CoDTweaker.exe did not exit after taking the screenshot' }
+          if ($p.ExitCode -ne 0) { throw "CoDTweaker.exe exited with code $($p.ExitCode)" }
+          if (-not (Test-Path $png)) { throw 'No screenshot was written: the window did not render' }
+          Copy-Item publish-small/CoDTweaker.exe publish/CoDTweaker-small-needs-dotnet10.exe
       - name: Create release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create $env:GITHUB_REF_NAME publish/CoDTweaker.exe --title "CoD Tweaker $env:GITHUB_REF_NAME" --generate-notes
+        run: >
+          gh release create $env:GITHUB_REF_NAME publish/CoDTweaker.exe publish/CoDTweaker-small-needs-dotnet10.exe
+          --title "CoD Tweaker $env:GITHUB_REF_NAME" --generate-notes
+          --notes "Download **CoDTweaker.exe** (works on any Windows 10/11 PC). The *-small-needs-dotnet10* build is a fraction of the size but needs the .NET 10 Desktop Runtime installed."
