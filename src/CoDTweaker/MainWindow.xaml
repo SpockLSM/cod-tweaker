@@ -239,7 +239,7 @@
                     <Grid Grid.Column="0">
                         <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,6,6" FontSize="14"/>
                         <TextBlock Text="&#x1F50D;" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.6"/>
-                        <TextBlock Text="Search settings by name, description, note or value" Margin="32,0,0,0" VerticalAlignment="Center"
+                        <TextBlock Text="Search by name, description, note or value" Margin="32,0,0,0" VerticalAlignment="Center"
                                    Foreground="{DynamicResource Muted}" IsHitTestVisible="False"
                                    Visibility="{Binding Search.Length, Converter={StaticResource BoolVisInverse}}"/>
                     </Grid>
