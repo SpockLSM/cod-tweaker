@@ -4,6 +4,8 @@ Edit Call of Duty's settings files outside the game, including the options the i
 
 ![CoD Tweaker](docs/screenshot.png)
 
+*Also in [dark](docs/screenshot-dark.png).*
+
 Call of Duty keeps its settings in plain text files under `%LOCALAPPDATA%\Activision\Call of Duty\players`. They hold everything the menus offer plus a good deal they don't: frame-generation modes, video-memory share, render worker threads, dynamic-resolution targets, shader-preload behaviour, menu FPS caps and more. Editing them by hand works, but the game rewrites the files when it exits, so edits vanish unless the file is made read-only. CoD Tweaker handles all of that.
 
 ## What it does
