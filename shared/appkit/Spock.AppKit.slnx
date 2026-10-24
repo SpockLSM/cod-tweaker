@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Spock.AppKit/Spock.AppKit.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Spock.AppKit.Tests/Spock.AppKit.Tests.csproj" />
+  </Folder>
+</Solution>
