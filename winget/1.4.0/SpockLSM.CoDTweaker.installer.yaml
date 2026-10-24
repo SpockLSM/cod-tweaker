@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+PackageIdentifier: SpockLSM.CoDTweaker
+PackageVersion: 1.4.0
+InstallerType: portable
+Commands:
+- codtweaker
+ReleaseDate: 2026-10-23
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/SpockLSM/cod-tweaker/releases/download/v1.4.0/CoDTweaker.exe
+  InstallerSha256: 9D5F454D3E1D993D2D7F3DDC473448AF7079E9B9CFF99E4F263EB00AA882A542
+ManifestType: installer
+ManifestVersion: 1.6.0

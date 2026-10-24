@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: SpockLSM.CoDTweaker
+PackageVersion: 1.4.0
+PackageLocale: en-US
+Publisher: Spock
+PublisherUrl: https://github.com/SpockLSM
+PublisherSupportUrl: https://github.com/SpockLSM/cod-tweaker/issues
+PackageName: CoD Tweaker
+PackageUrl: https://github.com/SpockLSM/cod-tweaker
+License: MIT
+LicenseUrl: https://github.com/SpockLSM/cod-tweaker/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Spock
+ShortDescription: "Edit Call of Duty's settings files outside the game, including options the in-game menu doesn't show"
+Description: "Edit Call of Duty's settings files outside the game: every setting with the game's own descriptions and limits, notes on the ones the in-game menu hides, pins the app puts back after the game exits, compare against backups and presets, and a command-line apply for scripts."
+Tags:
+- call-of-duty
+- cod
+- settings
+- config
+- gaming
+- tweaker
+ReleaseNotesUrl: https://github.com/SpockLSM/cod-tweaker/releases/tag/v1.4.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

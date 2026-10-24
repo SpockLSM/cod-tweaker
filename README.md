@@ -40,6 +40,8 @@ Call of Duty keeps its settings in plain text files under `%LOCALAPPDATA%\Activi
 
 > **Windows SmartScreen** may warn that the app is unrecognised, because it isn't code-signed. Click *More info > Run anyway*. The source is here if you'd rather build it yourself (see below).
 
+Once the package is in the [winget community repository](https://github.com/microsoft/winget-pkgs), `winget install SpockLSM.CoDTweaker` installs it and `winget upgrade` keeps it current; the manifests are kept under [`winget/`](winget/).
+
 ### Pins and the Guard
 
 Click the pin on a row to pin that value. With **Guard pinned settings** ticked, the app stays in the tray when you close the window; when Call of Duty starts it unlocks any pinned file so the in-game menu keeps working, and a few seconds after the game exits it writes the pinned values back, backing the file up first and keeping whatever else the game changed. A pin shown in orange means the file currently holds a different value than the pin; the Guard will fix that at the next game exit, or use **More > Put pinned values back now** to do it immediately.
