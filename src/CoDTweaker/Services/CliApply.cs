@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.InteropServices;
 using CoDTweaker.Models;
 
 namespace CoDTweaker.Services;
@@ -76,40 +75,4 @@ public static class CliApply
         return code;
     }
 
-    /// <summary>A window app has no console; borrow the parent's when started from one, and keep a log file either way.</summary>
-    public static TextWriter OpenLog()
-    {
-        var writers = new List<TextWriter>();
-        try
-        {
-            if (AttachConsole(-1))
-            {
-                var stdout = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
-                stdout.WriteLine();
-                writers.Add(stdout);
-            }
-        }
-        catch { }
-        try
-        {
-            Directory.CreateDirectory(AppPaths.Logs);
-            writers.Add(new StreamWriter(Path.Combine(AppPaths.Logs, $"apply-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt")) { AutoFlush = true });
-        }
-        catch { }
-        return new TeeWriter(writers);
-    }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    static extern bool AttachConsole(int processId);
-
-    sealed class TeeWriter : TextWriter
-    {
-        readonly List<TextWriter> _w;
-        public TeeWriter(List<TextWriter> w) => _w = w;
-        public override System.Text.Encoding Encoding => System.Text.Encoding.UTF8;
-        public override void Write(char value) { foreach (var w in _w) w.Write(value); }
-        public override void Write(string? value) { foreach (var w in _w) w.Write(value); }
-        public override void WriteLine(string? value) { foreach (var w in _w) w.WriteLine(value); }
-        protected override void Dispose(bool disposing) { if (disposing) foreach (var w in _w) w.Dispose(); base.Dispose(disposing); }
-    }
 }

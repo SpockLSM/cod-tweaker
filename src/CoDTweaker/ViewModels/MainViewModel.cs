@@ -4,11 +4,16 @@ using System.Diagnostics;
 using System.IO;
 using CoDTweaker.Models;
 using CoDTweaker.Services;
+using Spock.AppKit;
+using Spock.AppKit.Mvvm;
 
 namespace CoDTweaker.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
 {
+    public const string GitHubRepo = "SpockLSM/cod-tweaker";
+    public const string RunKeyName = "CoDTweaker";
+
     readonly AppSettings _prefs;
     readonly PinStore _pins;
     readonly SynchronizationContext? _ui = SynchronizationContext.Current;
@@ -141,6 +146,18 @@ public sealed class MainViewModel : ObservableObject
         set { if (_prefs.GuardPinned != value) { _prefs.GuardPinned = value; _prefs.Save(); OnPropertyChanged(); OnPropertyChanged(nameof(GuardText)); } }
     }
 
+    /// <summary>Registers the exe with --tray in the user's Startup entries, so the Guard is running before the game is.</summary>
+    public bool StartWithWindows
+    {
+        get => StartupRun.IsSet(RunKeyName);
+        set
+        {
+            if (value) StartupRun.Set(RunKeyName, Shell.ExePath, "--tray"); else StartupRun.Clear(RunKeyName);
+            OnPropertyChanged();
+            Status = value ? "CoD Tweaker will start with Windows, hidden in the tray." : "CoD Tweaker no longer starts with Windows.";
+        }
+    }
+
     public string GuardText => !GuardPinned ? ""
         : PinnedCount == 0 && !_pins.PinnedFiles.Any() ? "Guard is on but nothing is pinned yet. Pin a setting with the pin button on its row."
         : $"Guard is on: {_pins.PinnedFiles.Count()} file(s) with pins.";
@@ -192,7 +209,7 @@ public sealed class MainViewModel : ObservableObject
     ReleaseInfo? _update;
     public ReleaseInfo? UpdateAvailable { get => _update; private set { if (SetProperty(ref _update, value)) { OnPropertyChanged(nameof(HasUpdate)); OnPropertyChanged(nameof(UpdateText)); } } }
     public bool HasUpdate => _update != null;
-    public string UpdateText => _update == null ? "" : $"CoD Tweaker {_update.Tag} is available (you have {UpdateCheck.Current.ToString(3)}).";
+    public string UpdateText => _update == null ? "" : $"CoD Tweaker {_update.Tag} is available (you have {AppVersion.Short}).";
 
     public bool HasDocument => _doc != null;
     public bool HasNoFiles => Files.Count == 0;
@@ -245,10 +262,7 @@ public sealed class MainViewModel : ObservableObject
         if (Directory.Exists(BackupService.Root)) Process.Start(new ProcessStartInfo("explorer.exe", $"\"{BackupService.Root}\"") { UseShellExecute = true });
     }
 
-    static void OpenUrl(string url)
-    {
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
-    }
+    static void OpenUrl(string url) => Shell.OpenUrl(url);
 
     // ----- the document -----
 
@@ -611,11 +625,11 @@ public sealed class MainViewModel : ObservableObject
         if (!manual && !_prefs.CheckForUpdates) return;
         _ = Task.Run(async () =>
         {
-            var latest = await UpdateCheck.LatestAsync();
+            var latest = await new UpdateCheck(GitHubRepo, "CoD Tweaker").LatestAsync();
             void Apply()
             {
-                if (latest == null) { if (manual) Status = "Couldn't check for updates (offline, or no public release yet)."; return; }
-                if (!UpdateCheck.IsNewer(latest)) { if (manual) Status = $"You have the latest version ({UpdateCheck.Current.ToString(3)})."; return; }
+                if (latest == null) { if (manual) Status = "Couldn't check for updates (offline, or GitHub didn't answer)."; return; }
+                if (!UpdateCheck.IsNewer(latest)) { if (manual) Status = $"You have the latest version ({AppVersion.Short})."; return; }
                 if (!manual && latest.Tag == _prefs.DismissedUpdate) return;
                 UpdateAvailable = latest;
                 if (manual) Status = UpdateText;

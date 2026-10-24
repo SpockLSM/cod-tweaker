@@ -5,22 +5,6 @@
         WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBg}"
         FontFamily="Segoe UI" FontSize="13" Foreground="{DynamicResource Text}" ShowInTaskbar="False"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
-    <Window.Resources>
-        <Style TargetType="GridViewColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource Panel}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-        <Style TargetType="ListViewItem">
-            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-            <Setter Property="Padding" Value="4,6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-        </Style>
-    </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

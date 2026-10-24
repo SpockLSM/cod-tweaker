@@ -4,14 +4,13 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <!-- Windows Forms only for the tray icon; its implicit usings are removed below so WPF types stay unambiguous. -->
-    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>CoDTweaker</AssemblyName>
     <RootNamespace>CoDTweaker</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.3.0</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Version>1.4.0</Version>
     <Product>CoD Tweaker</Product>
     <Authors>Spock</Authors>
     <Copyright>Copyright (c) 2026 Spock</Copyright>
@@ -21,8 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Using Remove="System.Windows.Forms" />
-    <Using Remove="System.Drawing" />
+    <!-- The plumbing shared with CoD Dedupe, vendored from github.com/SpockLSM/appkit with git subtree. -->
+    <ProjectReference Include="..\..\shared\appkit\src\Spock.AppKit\Spock.AppKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

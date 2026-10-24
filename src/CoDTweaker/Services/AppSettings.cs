@@ -22,6 +22,8 @@ public sealed class AppSettings
     public double WindowHeight { get; set; }
     public bool WindowMaximized { get; set; }
     public bool TrayHintShown { get; set; }
+    /// <summary>Where the exe last ran from, so other tools (CoD Dedupe) can call it.</summary>
+    public string? LastExePath { get; set; }
 
     public static AppSettings Load()
     {

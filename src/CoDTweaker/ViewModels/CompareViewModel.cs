@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using CoDTweaker.Models;
 using CoDTweaker.Services;
+using Spock.AppKit.Mvvm;
 
 namespace CoDTweaker.ViewModels;
 

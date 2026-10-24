@@ -44,7 +44,7 @@ Call of Duty keeps its settings in plain text files under `%LOCALAPPDATA%\Activi
 
 Click the pin on a row to pin that value. With **Guard pinned settings** ticked, the app stays in the tray when you close the window; when Call of Duty starts it unlocks any pinned file so the in-game menu keeps working, and a few seconds after the game exits it writes the pinned values back, backing the file up first and keeping whatever else the game changed. A pin shown in orange means the file currently holds a different value than the pin; the Guard will fix that at the next game exit, or use **More > Put pinned values back now** to do it immediately.
 
-Right-click the tray icon to open the window, toggle the Guard, or exit. Start the app with `--tray` (for a shortcut in your Startup folder) to begin hidden.
+Right-click the tray icon to open the window, toggle the Guard, or exit. Tick **Start with Windows, hidden in the tray** and the Guard is already running when you launch the game (it adds the exe with `--tray` to your Startup entries; untick to remove it).
 
 ### Locked files and the in-game menu
 
@@ -90,7 +90,9 @@ To make the single-file exe that the releases ship:
 dotnet publish src/CoDTweaker/CoDTweaker.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
 ```
 
-Releases are built by GitHub Actions: push a tag such as `v1.3.0` and both exes are attached to a release automatically. Every build also starts the published exe and takes a screenshot, so a build that cannot open its window never ships.
+Releases are built by GitHub Actions: push a tag such as `v1.4.0` and both exes are attached to a release automatically. Every build also starts the published exe and takes a screenshot, so a build that cannot open its window never ships.
+
+The themes, tray icon, crash log and update check live in [Spock.AppKit](https://github.com/SpockLSM/appkit), shared with CoD Dedupe. A copy is vendored under `shared/appkit` with `git subtree`, so a plain clone builds with nothing else to fetch; `git subtree pull --prefix shared/appkit https://github.com/SpockLSM/appkit.git main --squash` brings in a newer kit.
 
 ## FAQ
 

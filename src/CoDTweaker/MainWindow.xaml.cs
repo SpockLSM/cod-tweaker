@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using CoDTweaker.Services;
 using CoDTweaker.ViewModels;
 using Microsoft.Win32;
+using Spock.AppKit;
 
 namespace CoDTweaker;
 
@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        RestoreWindowSize();
+        WindowPlacement.Restore(this, _vm.Prefs.WindowWidth, _vm.Prefs.WindowHeight, _vm.Prefs.WindowMaximized);
 
         FilesView = CollectionViewSource.GetDefaultView(_vm.Files);
         FilesView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(FileItemVm.Group)));
@@ -52,12 +52,10 @@ public partial class MainWindow : Window
         _vm.PickBackup = backups => new RestoreWindow(backups) { Owner = this }.PickOne();
         _vm.ShowCompare = cvm => new CompareWindow(cvm) { Owner = this }.ShowDialog();
 
-        _tray = new TrayIcon(_vm.GuardPinned) { Visible = _vm.GuardPinned };
-        _tray.OpenRequested += ShowFromTray;
-        _tray.ExitRequested += ExitApp;
-        _tray.GuardToggled += on => _vm.GuardPinned = on;
+        _tray = new TrayIcon("CoD Tweaker") { ContextMenu = BuildTrayMenu(), Visible = _vm.GuardPinned };
+        _tray.Activated += ShowFromTray;
         _vm.GuardApplied += message => { if (!IsVisible) _tray.Notify("CoD Tweaker", message); };
-        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.GuardPinned)) { _tray.SetGuard(_vm.GuardPinned); _tray.Visible = _vm.GuardPinned || !IsVisible; } };
+        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.GuardPinned)) _tray.Visible = _vm.GuardPinned || !IsVisible; };
 
         DataContext = _vm;
         FileList.ItemsSource = FilesView;
@@ -78,6 +76,22 @@ public partial class MainWindow : Window
     }
 
     // ----- tray -----
+
+    ContextMenu BuildTrayMenu()
+    {
+        var menu = new ContextMenu();
+        var open = new MenuItem { Header = "Open CoD Tweaker" };
+        open.Click += (_, _) => ShowFromTray();
+        var guard = new MenuItem { Header = "Guard pinned settings", IsCheckable = true };
+        guard.SetBinding(MenuItem.IsCheckedProperty, new Binding(nameof(MainViewModel.GuardPinned)) { Source = _vm, Mode = BindingMode.TwoWay });
+        var exit = new MenuItem { Header = "Exit" };
+        exit.Click += (_, _) => ExitApp();
+        menu.Items.Add(open);
+        menu.Items.Add(guard);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(exit);
+        return menu;
+    }
 
     /// <summary>Closing the window keeps the app in the tray only while the Guard has something to do.</summary>
     public bool CanHideToTray => _vm.GuardPinned;
@@ -126,32 +140,11 @@ public partial class MainWindow : Window
             if (r == MessageBoxResult.Cancel) { e.Cancel = true; _exiting = false; return; }
             if (r == MessageBoxResult.Yes) { _vm.SaveCommand.Execute(null); if (_vm.ChangeCount > 0) { e.Cancel = true; _exiting = false; return; } }
         }
-        SaveWindowSize();
+        var (w, h, max) = WindowPlacement.Capture(this);
+        _vm.Prefs.WindowWidth = w; _vm.Prefs.WindowHeight = h; _vm.Prefs.WindowMaximized = max;
+        _vm.Prefs.Save();
         _timer.Stop();
         _tray.Dispose();
-    }
-
-    // ----- window size -----
-
-    void RestoreWindowSize()
-    {
-        var p = _vm.Prefs;
-        if (p.WindowWidth >= MinWidth && p.WindowHeight >= MinHeight &&
-            p.WindowWidth <= SystemParameters.VirtualScreenWidth && p.WindowHeight <= SystemParameters.VirtualScreenHeight)
-        {
-            Width = p.WindowWidth;
-            Height = p.WindowHeight;
-        }
-        if (p.WindowMaximized) WindowState = WindowState.Maximized;
-    }
-
-    void SaveWindowSize()
-    {
-        var p = _vm.Prefs;
-        p.WindowMaximized = WindowState == WindowState.Maximized;
-        if (WindowState == WindowState.Normal) { p.WindowWidth = Width; p.WindowHeight = Height; }
-        else { p.WindowWidth = RestoreBounds.Width; p.WindowHeight = RestoreBounds.Height; }
-        p.Save();
     }
 
     // ----- small handlers -----
@@ -164,7 +157,7 @@ public partial class MainWindow : Window
         UpdateThemeButton();
     }
 
-    void UpdateThemeButton() => ThemeButton.Content = Theme.IsDark ? "☀ Light mode" : "\U0001F319 Dark mode";
+    void UpdateThemeButton() => ThemeButton.Content = Theme.ToggleLabel;
 
     void MoreButton_Click(object sender, RoutedEventArgs e)
     {

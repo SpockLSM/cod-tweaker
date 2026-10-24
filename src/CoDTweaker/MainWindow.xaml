@@ -114,15 +114,6 @@
             </DockPanel>
         </DataTemplate>
 
-        <Style TargetType="ContextMenu">
-            <Setter Property="Background" Value="{DynamicResource Panel}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
-        </Style>
-        <Style TargetType="MenuItem">
-            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-            <Setter Property="Padding" Value="10,6"/>
-        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root" Margin="16">
@@ -306,6 +297,8 @@
                                Text="The friendlier alternative to locking: files with pins are unlocked while the game runs, so its menu works, and the pinned values are written back when it exits. The app keeps running in the tray to do that."/>
                     <TextBlock Foreground="{DynamicResource InfoText}" FontSize="11" Margin="20,2,0,0" TextWrapping="Wrap" MaxWidth="560"
                                Text="{Binding GuardText}" Visibility="{Binding GuardText.Length, Converter={StaticResource BoolVis}}"/>
+                    <CheckBox IsChecked="{Binding StartWithWindows}" Content="Start with Windows, hidden in the tray" FontSize="12" Margin="20,6,0,0"
+                              ToolTip="Adds CoD Tweaker to your Startup entries with --tray, so the Guard is already running when you launch the game"/>
                 </StackPanel>
             </DockPanel>
         </Border>
